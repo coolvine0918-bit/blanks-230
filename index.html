@@ -477,8 +477,8 @@
         function finishGame() {
             showScreen('screen-loading');
             
-            // 시트 연동 오류 수정 부분: 기본 안내 텍스트이거나 값이 비어있을 때만 에러 모드로 처리
-            if (!APPS_SCRIPT_WEB_APP_URL || APPS_SCRIPT_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbz6oXiW0mqiBTdUtdnXUGe70V5fEbteGJ0kimlY4h_OCBo6zbQzghvp4-gbtWMkjFN2/exec") {
+            // 시트 연동 오류 수정 부분: 값이 비어있을 때만 에러 모드로 처리
+            if (!APPS_SCRIPT_WEB_APP_URL || APPS_SCRIPT_WEB_APP_URL === "") {
                 showScreen('screen-end');
                 document.getElementById('final-score').innerText = `최종 점수: ${state.totalScore} / 20`;
                 
