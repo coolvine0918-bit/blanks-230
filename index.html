@@ -49,14 +49,16 @@
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col items-center py-6 px-4">
 
+    <!-- 모달 창 -->
     <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex justify-center items-center">
         <div class="bg-white rounded-2xl p-6 w-11/12 max-w-sm text-center shadow-xl modal-enter">
             <h3 id="modal-title" class="text-2xl mb-4 text-emerald-600">알림</h3>
-            <p id="modal-message" class="text-lg mb-6">메시지 내용</p>
+            <p id="modal-message" class="text-lg mb-6 whitespace-pre-line">메시지 내용</p>
             <button onclick="closeModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-full w-full text-xl transition shadow-md">확인</button>
         </div>
     </div>
 
+    <!-- 인트로 화면 -->
     <div id="screen-intro" class="w-full max-w-md bg-white rounded-3xl shadow-lg p-8 mt-10">
         <h1 class="text-4xl text-center text-emerald-600 mb-2">기본권 구제 마스터</h1>
         <p class="text-center text-gray-500 mb-8 text-lg">빈칸을 채우고 캐릭터를 꾸며보세요!</p>
@@ -81,6 +83,7 @@
         <button onclick="startGame()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-2xl text-2xl shadow-[0_6px_0_#047857] active:shadow-[0_0px_0_#047857] active:translate-y-2 transition-all">게임 시작하기!</button>
     </div>
 
+    <!-- 게임 화면 -->
     <div id="screen-game" class="w-full max-w-5xl hidden flex-col md:flex-row gap-6 h-full">
         
         <!-- 왼쪽: 아바타 상태창 -->
@@ -118,17 +121,17 @@
                     <!-- 자바스크립트로 문장 생성됨 -->
                 </div>
                 
-                <button onclick="submitStage()" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl text-2xl shadow-[0_6px_0_#1d4ed8] active:shadow-[0_0px_0_#1d4ed8] active:translate-y-2 transition-all">정답 확인하기</button>
+                <button id="submit-btn" onclick="submitStage()" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl text-2xl shadow-[0_6px_0_#1d4ed8] active:shadow-[0_0px_0_#1d4ed8] active:translate-y-2 transition-all">정답 확인하기</button>
             </div>
         </div>
     </div>
 
+    <!-- 보상 화면 -->
     <div id="screen-reward" class="w-full max-w-3xl bg-white rounded-3xl shadow-lg p-8 mt-10 hidden flex-col items-center text-center">
         <h2 class="text-4xl text-amber-500 mb-2">✨ 스테이지 클리어! ✨</h2>
         <p class="text-xl mb-8">3문제 이상 맞혀서 보상을 얻었어요! 원하는 아이템을 하나 고르세요.</p>
         
         <div class="grid grid-cols-5 gap-4 mb-8 w-full">
-            <!-- 보상 아이템 버튼들 -->
             <button onclick="equipItem('👑', 'head')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">👑</button>
             <button onclick="equipItem('🧢', 'head')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🧢</button>
             <button onclick="equipItem('🕶️', 'face')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🕶️</button>
@@ -141,16 +144,17 @@
             <button onclick="equipItem('🪄', 'body')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🪄</button>
         </div>
         
-        <!-- 보상을 선택하지 않고 넘어가기 -->
         <button onclick="startNextStage()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-8 rounded-full text-xl transition">보상 없이 다음 단계로</button>
     </div>
 
+    <!-- 로딩 화면 -->
     <div id="screen-loading" class="w-full max-w-md bg-white rounded-3xl shadow-lg p-10 mt-20 hidden flex-col items-center text-center">
         <div class="animate-spin text-6xl mb-4">⏳</div>
         <h2 class="text-2xl text-emerald-600">구글 시트에 점수를 기록 중입니다...</h2>
         <p class="text-gray-500 mt-2">잠시만 기다려주세요.</p>
     </div>
 
+    <!-- 최종 결과 화면 -->
     <div id="screen-end" class="w-full max-w-md bg-white rounded-3xl shadow-lg p-10 mt-10 hidden flex-col items-center text-center">
         <h1 class="text-5xl text-emerald-600 mb-4">학습 완료! 🎉</h1>
         <p id="final-score" class="text-3xl text-amber-500 mb-6">최종 점수: 20 / 20</p>
@@ -165,25 +169,22 @@
     <script>
         // -------------------------------------------------------------
         // [중요 설정] Apps Script 배포 후 발급받은 웹앱 URL을 아래에 넣으세요.
-        // 프론트엔드 코드에는 어떠한 API 키도 없으므로 안전합니다.
         // -------------------------------------------------------------
-        const APPS_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz1Jf6sh4LSh_blsMOQL1D1MzI617gGJk9MQ4HmHxEnH_C0_ymNEIA8PH3ZlYmhjlvn/exec"; 
+        const APPS_SCRIPT_WEB_APP_URL = "여기에_웹앱_URL을_붙여넣으세요"; 
 
-        // 게임 상태 관리
         let state = {
             studentId: "",
             name: "",
             character: "", // '👦' or '👧'
             currentStage: 0,
             totalScore: 0,
-            selectedWord: null, // 현재 단어 은행에서 선택된 단어
+            selectedWord: null, 
             words: [
                 "법원", "헌법재판소", "국가 인권 위원회", "국가기관", "구제", 
                 "재판", "소", "조정", "화해", "공권력", 
                 "헌법소원", "본인", "구제 절차", "차별", "진정", 
                 "집행", "고충 민원", "행정 기관", "행정 심판", "처분"
             ],
-            // 각 스테이지의 정답 맵핑. 키는 빈칸의 ID
             stages: [
                 {
                     text: "기본권이 침해되었을 때에는 <span class='blank-slot' id='blank-1' data-answer='법원'></span>, <span class='blank-slot' id='blank-2' data-answer='헌법재판소'></span>, <span class='blank-slot' id='blank-3' data-answer='국가 인권 위원회'></span>, 국민 권익 위원회 등의 <span class='blank-slot' id='blank-4' data-answer='국가기관'></span>에 도움을 요청하여 구제받을 수 있다.",
@@ -206,21 +207,21 @@
                     blanks: ['blank-17', 'blank-18', 'blank-19', 'blank-20']
                 }
             ],
-            userAnswers: {}, // id: word
-            equippedItems: [] // {emoji: '', type: ''}
+            userAnswers: {}, 
+            equippedItems: [], 
+            isStageSubmitted: false // 채점 완료 상태 관리용 플래그
         };
 
-        // 모달 제어 함수
         function showModal(title, message) {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-message').innerText = message;
             document.getElementById('custom-modal').classList.remove('hidden');
         }
+        
         function closeModal() {
             document.getElementById('custom-modal').classList.add('hidden');
         }
 
-        // 화면 전환 함수
         function showScreen(screenId) {
             ['screen-intro', 'screen-game', 'screen-reward', 'screen-loading', 'screen-end'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
@@ -263,15 +264,12 @@
             state.studentId = studentId;
             state.name = name;
             
-            // 아바타 설정
             document.getElementById('avatar-base').innerText = state.character;
             document.getElementById('player-info').innerText = `${state.studentId} ${state.name}`;
             
-            // 단어 은행 셔플 및 렌더링
             state.words.sort(() => Math.random() - 0.5);
             renderWordBank();
             
-            // 첫 스테이지 로드
             loadStage(0);
             showScreen('screen-game');
         }
@@ -284,7 +282,8 @@
                 btn.className = 'word-btn bg-white border-2 border-gray-300 text-gray-700 font-bold py-2 px-4 rounded-xl text-lg';
                 btn.innerText = word;
                 btn.onclick = () => selectWordBankItem(btn, word);
-                // 이미 사용된 단어 처리 (재시작 등 대비)
+                
+                // 사용된 단어 처리 (오답으로 인해 userAnswers에서 지워진 단어는 다시 활성화됨)
                 if(Object.values(state.userAnswers).includes(word)) {
                     btn.classList.add('used');
                 }
@@ -293,18 +292,14 @@
         }
 
         function selectWordBankItem(btn, word) {
-            // 이미 선택된 버튼 스타일 초기화
             document.querySelectorAll('.word-btn').forEach(b => b.classList.remove('selected'));
             
             if (state.selectedWord === word) {
-                // 선택 해제
                 state.selectedWord = null;
             } else {
-                // 선택
                 state.selectedWord = word;
                 btn.classList.add('selected');
                 
-                // 시각적 피드백: 빈칸들이 깜빡임 (채울 곳을 알려줌)
                 document.querySelectorAll('.blank-slot').forEach(blank => {
                     if(!blank.classList.contains('filled')) {
                         blank.classList.add('active');
@@ -315,30 +310,28 @@
         }
 
         function handleBlankClick(event) {
+            if (state.isStageSubmitted) return; // 채점 후에는 수정 불가
+
             const blank = event.target;
             const blankId = blank.id;
 
-            // 이미 채워져 있는 경우 -> 단어 취소 (단어 은행으로 돌려보냄)
             if (state.userAnswers[blankId]) {
                 const previousWord = state.userAnswers[blankId];
                 delete state.userAnswers[blankId];
                 blank.innerText = "";
                 blank.classList.remove('filled');
                 
-                // 단어 은행에서 해당 단어 복구
                 document.querySelectorAll('.word-btn').forEach(btn => {
                     if(btn.innerText === previousWord) btn.classList.remove('used');
                 });
                 return;
             }
 
-            // 단어가 선택되어 있는 경우 -> 빈칸 채우기
             if (state.selectedWord) {
                 state.userAnswers[blankId] = state.selectedWord;
                 blank.innerText = state.selectedWord;
                 blank.classList.add('filled');
                 
-                // 단어 은행에서 해당 단어 사용됨 처리 및 선택 해제
                 document.querySelectorAll('.word-btn').forEach(btn => {
                     if(btn.innerText === state.selectedWord) {
                         btn.classList.remove('selected');
@@ -353,6 +346,14 @@
 
         function loadStage(index) {
             state.currentStage = index;
+            state.isStageSubmitted = false; // 스테이지 초기화 시 채점 플래그 해제
+            
+            // 버튼 상태를 기본(파란색)으로 되돌리기
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.innerText = "정답 확인하기";
+            submitBtn.className = "mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl text-2xl shadow-[0_6px_0_#1d4ed8] active:shadow-[0_0px_0_#1d4ed8] active:translate-y-2 transition-all";
+            submitBtn.onclick = submitStage;
+
             document.getElementById('stage-info').innerText = `스테이지 ${index + 1} / 5`;
             document.getElementById('progress-bar').style.width = `${(index / 5) * 100}%`;
             
@@ -360,25 +361,26 @@
             const container = document.getElementById('sentence-container');
             container.innerHTML = stageData.text;
 
-            // 생성된 빈칸에 이벤트 리스너 부착
             stageData.blanks.forEach(id => {
                 const blank = document.getElementById(id);
                 blank.addEventListener('click', handleBlankClick);
                 
-                // 만약 이전에 채운 기록이 있다면 (보통 뒤로가기 없으므로 불필요하지만 안전장치)
                 if (state.userAnswers[id]) {
                     blank.innerText = state.userAnswers[id];
                     blank.classList.add('filled');
                 } else {
-                    blank.innerText = "     "; // 클릭 영역 확보
+                    blank.innerText = "     ";
                 }
             });
         }
 
         function submitStage() {
+            if (state.isStageSubmitted) return; // 중복 채점 방지
+
             const stageData = state.stages[state.currentStage];
             let stageCorrect = 0;
             let unfillCount = 0;
+            let wrongDetails = []; // 오답 정보를 저장할 배열
 
             stageData.blanks.forEach(id => {
                 const blank = document.getElementById(id);
@@ -389,11 +391,13 @@
                     unfillCount++;
                 } else if (userAnswer === correctAnswer) {
                     stageCorrect++;
-                    blank.style.backgroundColor = '#dcfce7'; // 정답 초록색
+                    blank.style.backgroundColor = '#dcfce7'; 
                     blank.style.color = '#15803d';
                     blank.style.borderBottomColor = '#22c55e';
                 } else {
-                    blank.style.backgroundColor = '#fee2e2'; // 오답 빨간색
+                    // 틀린 답에 대한 데이터 수집
+                    wrongDetails.push({ id, blank, correctAnswer });
+                    blank.style.backgroundColor = '#fee2e2'; 
                     blank.style.color = '#b91c1c';
                     blank.style.borderBottomColor = '#ef4444';
                 }
@@ -404,18 +408,41 @@
                 return;
             }
 
+            // 모든 칸을 채웠으므로 채점 상태로 돌입
+            state.isStageSubmitted = true;
             state.totalScore += stageCorrect;
             document.getElementById('score-info').innerText = `현재 점수: ${state.totalScore}점`;
 
-            // 정답 확인 피드백 후 딜레이
-            setTimeout(() => {
+            // 틀린 문제 처리: 제대로 된 정답을 화면에 보여주고, 오답 단어는 은행으로 돌려보냄
+            if (wrongDetails.length > 0) {
+                wrongDetails.forEach(detail => {
+                    detail.blank.innerText = detail.correctAnswer; // 빈칸에 빨간 글씨로 정답 덮어쓰기
+                    delete state.userAnswers[detail.id]; // 오답 단어를 사용 목록에서 제거
+                });
+                renderWordBank(); // 단어 은행 재렌더링 (틀렸던 단어들의 불이 켜져 다시 사용 가능해짐)
+            }
+
+            // 학생이 정답을 확인할 수 있도록 버튼을 보라색 '다음 단계로' 기능으로 전환
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.innerText = "다음 단계로 넘어가기";
+            submitBtn.className = "mt-6 w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 rounded-2xl text-2xl shadow-[0_6px_0_#7e22ce] active:shadow-[0_0px_0_#7e22ce] active:translate-y-2 transition-all";
+            
+            submitBtn.onclick = () => {
                 if (stageCorrect >= 3) {
                     showScreen('screen-reward');
                 } else {
-                    showModal("결과", `4문제 중 ${stageCorrect}문제를 맞혔습니다.\n아쉽게도 아이템 보상은 3문제 이상 맞혀야 획득할 수 있어요.`);
                     startNextStage();
                 }
-            }, 1000);
+            };
+
+            // 결과 안내 모달 표시 (모달을 닫고 정답을 복습한 뒤 다음 버튼을 누르게 됨)
+            if (stageCorrect === 4) {
+                showModal("결과", "4문제 모두 맞혔습니다! 완벽해요!\n확인을 누르고 '다음 단계로 넘어가기' 버튼을 클릭하세요.");
+            } else if (stageCorrect >= 3) {
+                showModal("결과", `4문제 중 ${stageCorrect}문제를 맞혔습니다.\n빨간색으로 표시된 올바른 정답을 눈으로 확인한 후 다음으로 넘어가세요.`);
+            } else {
+                showModal("결과", `4문제 중 ${stageCorrect}문제를 맞혔습니다.\n빈칸에 표시된 올바른 정답을 먼저 확인하세요!\n(아쉽지만 아이템은 3문제 이상 맞혀야 획득할 수 있어요)`);
+            }
         }
 
         function equipItem(emoji, type) {
@@ -430,7 +457,6 @@
             
             state.equippedItems.forEach(item => {
                 const itemSpan = document.createElement('span');
-                // 부위별로 클래스를 다르게 주어 위치를 조정
                 if (item.type === 'head') itemSpan.className = 'item-overlay item-head';
                 if (item.type === 'face') itemSpan.className = 'item-overlay item-face';
                 if (item.type === 'body') itemSpan.className = 'item-overlay item-body';
@@ -451,12 +477,11 @@
         function finishGame() {
             showScreen('screen-loading');
             
-            // 웹앱 URL 설정 검증 (선생님이 복사 안 했을 경우)
-            if (APPS_SCRIPT_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbz1Jf6sh4LSh_blsMOQL1D1MzI617gGJk9MQ4HmHxEnH_C0_ymNEIA8PH3ZlYmhjlvn/exec") {
+            // 시트 연동 오류 수정 부분: 기본 안내 텍스트이거나 값이 비어있을 때만 에러 모드로 처리
+            if (!APPS_SCRIPT_WEB_APP_URL || APPS_SCRIPT_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbw-CpWK-ZYtbPD25XzQsC5j2kYYEJf4sKfJkpkcYl4rFekw2PZdAHH_-KOopXUaIlVe/exec") {
                 showScreen('screen-end');
                 document.getElementById('final-score').innerText = `최종 점수: ${state.totalScore} / 20`;
                 
-                // 아바타 최종 복사
                 document.getElementById('final-avatar-base').innerText = state.character;
                 document.getElementById('final-avatar-items').innerHTML = document.getElementById('avatar-items').innerHTML;
                 
@@ -474,7 +499,6 @@
 
             fetch(APPS_SCRIPT_WEB_APP_URL, {
                 method: 'POST',
-                // Google Apps Script는 text/plain으로 보내고 내부에서 JSON.parse 하는 것이 CORS 회피에 유리할 때가 있습니다.
                 headers: {
                     'Content-Type': 'text/plain;charset=utf-8',
                 },
@@ -491,7 +515,6 @@
             })
             .catch(error => {
                 console.error("네트워크 에러:", error);
-                // 네트워크 에러가 나더라도 사용자는 완료 화면을 볼 수 있게 함
                 showFinalResult();
             });
         }
