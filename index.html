@@ -478,7 +478,7 @@
             showScreen('screen-loading');
             
             // 시트 연동 오류 수정 부분: 기본 안내 텍스트이거나 값이 비어있을 때만 에러 모드로 처리
-            if (!APPS_SCRIPT_WEB_APP_URL || APPS_SCRIPT_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbw-CpWK-ZYtbPD25XzQsC5j2kYYEJf4sKfJkpkcYl4rFekw2PZdAHH_-KOopXUaIlVe/exec") {
+            if (!APPS_SCRIPT_WEB_APP_URL || APPS_SCRIPT_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbwSmO6Kc7BLsI6iBzQgPBxZjBiVqVjQkoL_znKCzqoApkeDbZg4PRGVMJ0UZg0vTAuC/exec") {
                 showScreen('screen-end');
                 document.getElementById('final-score').innerText = `최종 점수: ${state.totalScore} / 20`;
                 
