@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기본권 구제 마스터 게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 커스텀 폰트 및 애니메이션 설정 */
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        body { font-family: 'Jua', sans-serif; background-color: #f0fdf4; user-select: none; }
+        
+        /* 빈칸 스타일링 */
+        .blank-slot {
+            display: inline-block;
+            min-width: 80px;
+            height: 36px;
+            border-bottom: 3px solid #22c55e;
+            text-align: center;
+            color: #15803d;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0 10px;
+            margin: 0 5px;
+            transition: all 0.2s ease;
+            background-color: #dcfce7;
+            border-radius: 6px 6px 0 0;
+        }
+        .blank-slot:hover { background-color: #bbf7d0; transform: scale(1.05); }
+        .blank-slot.active { outline: 3px solid #f59e0b; background-color: #fef3c7; }
+        .blank-slot.filled { background-color: #e0e7ff; border-bottom-color: #4f46e5; color: #3730a3; }
+
+        /* 단어 보기 버튼 스타일링 */
+        .word-btn { transition: all 0.2s ease; }
+        .word-btn:active { transform: scale(0.95); }
+        .word-btn.selected { background-color: #f59e0b; color: white; border-color: #d97706; transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .word-btn.used { opacity: 0.5; pointer-events: none; text-decoration: line-through; }
+
+        /* 아바타 아이템 오버레이용 절대 좌표 클래스 */
+        .item-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; font-size: 8rem; display: flex; justify-content: center; align-items: center; z-index: 10; }
+        .item-head { top: -40px; font-size: 5rem; }
+        .item-face { top: 0px; font-size: 4rem; }
+        .item-body { top: 50px; font-size: 6rem; }
+        
+        /* 모달 애니메이션 */
+        .modal-enter { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col items-center py-6 px-4">
+
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex justify-center items-center">
+        <div class="bg-white rounded-2xl p-6 w-11/12 max-w-sm text-center shadow-xl modal-enter">
+            <h3 id="modal-title" class="text-2xl mb-4 text-emerald-600">알림</h3>
+            <p id="modal-message" class="text-lg mb-6">메시지 내용</p>
+            <button onclick="closeModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-full w-full text-xl transition shadow-md">확인</button>
+        </div>
+    </div>
+
+    <div id="screen-intro" class="w-full max-w-md bg-white rounded-3xl shadow-lg p-8 mt-10">
+        <h1 class="text-4xl text-center text-emerald-600 mb-2">기본권 구제 마스터</h1>
+        <p class="text-center text-gray-500 mb-8 text-lg">빈칸을 채우고 캐릭터를 꾸며보세요!</p>
+        
+        <div class="space-y-4 mb-6">
+            <div>
+                <label class="block text-lg mb-1">학번</label>
+                <input type="number" id="input-student-id" class="w-full border-2 border-emerald-200 rounded-xl p-3 text-xl focus:outline-none focus:border-emerald-500 transition" placeholder="예: 30101">
+            </div>
+            <div>
+                <label class="block text-lg mb-1">이름</label>
+                <input type="text" id="input-name" class="w-full border-2 border-emerald-200 rounded-xl p-3 text-xl focus:outline-none focus:border-emerald-500 transition" placeholder="이름을 입력하세요">
+            </div>
+        </div>
+
+        <p class="text-center text-lg mb-3">캐릭터 선택</p>
+        <div class="flex justify-center gap-6 mb-8">
+            <button onclick="selectCharacter('👦')" id="char-boy" class="text-7xl p-4 bg-gray-50 rounded-2xl border-4 border-transparent hover:border-emerald-300 transition">👦</button>
+            <button onclick="selectCharacter('👧')" id="char-girl" class="text-7xl p-4 bg-gray-50 rounded-2xl border-4 border-transparent hover:border-emerald-300 transition">👧</button>
+        </div>
+
+        <button onclick="startGame()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-2xl text-2xl shadow-[0_6px_0_#047857] active:shadow-[0_0px_0_#047857] active:translate-y-2 transition-all">게임 시작하기!</button>
+    </div>
+
+    <div id="screen-game" class="w-full max-w-5xl hidden flex-col md:flex-row gap-6 h-full">
+        
+        <!-- 왼쪽: 아바타 상태창 -->
+        <div class="md:w-1/3 bg-white rounded-3xl shadow-lg p-6 flex flex-col items-center relative">
+            <h2 class="text-2xl text-emerald-600 mb-2">나의 캐릭터</h2>
+            <p id="player-info" class="text-gray-500 mb-4 font-sans font-bold"></p>
+            
+            <div class="relative w-48 h-48 bg-emerald-50 rounded-full flex justify-center items-center mb-6 overflow-hidden border-4 border-emerald-100">
+                <span id="avatar-base" class="text-8xl relative z-0">👦</span>
+                <!-- 장착된 아이템들이 여기에 추가됩니다 -->
+                <div id="avatar-items" class="absolute inset-0 z-10 pointer-events-none"></div>
+            </div>
+
+            <div class="w-full bg-gray-100 rounded-full h-4 mb-2">
+                <div id="progress-bar" class="bg-amber-400 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <p id="stage-info" class="text-lg">스테이지 1 / 5</p>
+            <p id="score-info" class="text-lg text-blue-600 mt-2">현재 점수: 0점</p>
+        </div>
+
+        <!-- 오른쪽: 퀴즈 영역 -->
+        <div class="md:w-2/3 flex flex-col gap-4">
+            <!-- 단어 보기 창 -->
+            <div class="bg-white rounded-3xl shadow-lg p-6">
+                <h3 class="text-xl mb-3 text-gray-700">단어 보기 (클릭하여 선택 후 빈칸 클릭)</h3>
+                <div id="word-bank" class="flex flex-wrap gap-2 justify-center">
+                    <!-- 자바스크립트로 단어 버튼 생성됨 -->
+                </div>
+            </div>
+
+            <!-- 문제 창 -->
+            <div class="bg-white rounded-3xl shadow-lg p-6 flex-grow flex flex-col">
+                <h3 class="text-2xl mb-4 text-emerald-600">빈칸 채우기</h3>
+                <div id="sentence-container" class="text-2xl leading-relaxed bg-gray-50 p-6 rounded-2xl flex-grow font-sans font-medium text-gray-700">
+                    <!-- 자바스크립트로 문장 생성됨 -->
+                </div>
+                
+                <button onclick="submitStage()" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl text-2xl shadow-[0_6px_0_#1d4ed8] active:shadow-[0_0px_0_#1d4ed8] active:translate-y-2 transition-all">정답 확인하기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-reward" class="w-full max-w-3xl bg-white rounded-3xl shadow-lg p-8 mt-10 hidden flex-col items-center text-center">
+        <h2 class="text-4xl text-amber-500 mb-2">✨ 스테이지 클리어! ✨</h2>
+        <p class="text-xl mb-8">3문제 이상 맞혀서 보상을 얻었어요! 원하는 아이템을 하나 고르세요.</p>
+        
+        <div class="grid grid-cols-5 gap-4 mb-8 w-full">
+            <!-- 보상 아이템 버튼들 -->
+            <button onclick="equipItem('👑', 'head')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">👑</button>
+            <button onclick="equipItem('🧢', 'head')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🧢</button>
+            <button onclick="equipItem('🕶️', 'face')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🕶️</button>
+            <button onclick="equipItem('👓', 'face')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">👓</button>
+            <button onclick="equipItem('🧣', 'body')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🧣</button>
+            <button onclick="equipItem('🎀', 'head')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🎀</button>
+            <button onclick="equipItem('🎒', 'body')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🎒</button>
+            <button onclick="equipItem('🎧', 'head')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🎧</button>
+            <button onclick="equipItem('🧥', 'body')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🧥</button>
+            <button onclick="equipItem('🪄', 'body')" class="text-5xl p-4 bg-gray-50 rounded-2xl border-4 border-gray-200 hover:border-amber-400 hover:bg-amber-50 transition">🪄</button>
+        </div>
+        
+        <!-- 보상을 선택하지 않고 넘어가기 -->
+        <button onclick="startNextStage()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-8 rounded-full text-xl transition">보상 없이 다음 단계로</button>
+    </div>
+
+    <div id="screen-loading" class="w-full max-w-md bg-white rounded-3xl shadow-lg p-10 mt-20 hidden flex-col items-center text-center">
+        <div class="animate-spin text-6xl mb-4">⏳</div>
+        <h2 class="text-2xl text-emerald-600">구글 시트에 점수를 기록 중입니다...</h2>
+        <p class="text-gray-500 mt-2">잠시만 기다려주세요.</p>
+    </div>
+
+    <div id="screen-end" class="w-full max-w-md bg-white rounded-3xl shadow-lg p-10 mt-10 hidden flex-col items-center text-center">
+        <h1 class="text-5xl text-emerald-600 mb-4">학습 완료! 🎉</h1>
+        <p id="final-score" class="text-3xl text-amber-500 mb-6">최종 점수: 20 / 20</p>
+        <div class="relative w-48 h-48 bg-emerald-50 rounded-full flex justify-center items-center mb-6 overflow-hidden border-4 border-emerald-100">
+            <span id="final-avatar-base" class="text-8xl relative z-0">👦</span>
+            <div id="final-avatar-items" class="absolute inset-0 z-10 pointer-events-none"></div>
+        </div>
+        <p class="text-lg text-gray-600 mb-8">모든 문제를 훌륭하게 풀어냈습니다. 점수가 시트에 성공적으로 기록되었습니다.</p>
+        <button onclick="location.reload()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-full text-xl transition shadow-md">처음으로 돌아가기</button>
+    </div>
+
+    <script>
+        // -------------------------------------------------------------
+        // [중요 설정] Apps Script 배포 후 발급받은 웹앱 URL을 아래에 넣으세요.
+        // 프론트엔드 코드에는 어떠한 API 키도 없으므로 안전합니다.
+        // -------------------------------------------------------------
+        const APPS_SCRIPT_WEB_APP_URL = "여기에_웹앱_URL을_붙여넣으세요"; 
+
+        // 게임 상태 관리
+        let state = {
+            studentId: "",
+            name: "",
+            character: "", // '👦' or '👧'
+            currentStage: 0,
+            totalScore: 0,
+            selectedWord: null, // 현재 단어 은행에서 선택된 단어
+            words: [
+                "법원", "헌법재판소", "국가 인권 위원회", "국가기관", "구제", 
+                "재판", "소", "조정", "화해", "공권력", 
+                "헌법소원", "본인", "구제 절차", "차별", "진정", 
+                "집행", "고충 민원", "행정 기관", "행정 심판", "처분"
+            ],
+            // 각 스테이지의 정답 맵핑. 키는 빈칸의 ID
+            stages: [
+                {
+                    text: "기본권이 침해되었을 때에는 <span class='blank-slot' id='blank-1' data-answer='법원'></span>, <span class='blank-slot' id='blank-2' data-answer='헌법재판소'></span>, <span class='blank-slot' id='blank-3' data-answer='국가 인권 위원회'></span>, 국민 권익 위원회 등의 <span class='blank-slot' id='blank-4' data-answer='국가기관'></span>에 도움을 요청하여 구제받을 수 있다.",
+                    blanks: ['blank-1', 'blank-2', 'blank-3', 'blank-4']
+                },
+                {
+                    text: "국가기관 등의 도움으로 <span class='blank-slot' id='blank-5' data-answer='구제'></span>받을 수 있다. [법원] 법원은 <span class='blank-slot' id='blank-6' data-answer='재판'></span>을 하여 침해된 기본권을 구제한다. 국가기관 등에 의해 기본권을 침해당한 사람이 <span class='blank-slot' id='blank-7' data-answer='소'></span>를 제기하면 문제를 해결해 준다. 분쟁이 발생하였을 때 법원에 <span class='blank-slot' id='blank-8' data-answer='조정'></span>이나 화해를 신청할 수 있다.",
+                    blanks: ['blank-5', 'blank-6', 'blank-7', 'blank-8']
+                },
+                {
+                    text: "법원에 조정이나 <span class='blank-slot' id='blank-9' data-answer='화해'></span>를 신청할 수 있다. [헌법재판소] 헌법재판소는 <span class='blank-slot' id='blank-10' data-answer='공권력'></span>에 의해 기본권을 침해당한 사람이 <span class='blank-slot' id='blank-11' data-answer='헌법소원'></span>을 청구하면 구제해 준다. 헌법 소원은 기본권을 침해받은 <span class='blank-slot' id='blank-12' data-answer='본인'></span>이 청구할 수 있다.",
+                    blanks: ['blank-9', 'blank-10', 'blank-11', 'blank-12']
+                },
+                {
+                    text: "헌법소원은 다른 <span class='blank-slot' id='blank-13' data-answer='구제 절차'></span>를 모두 거친 후에 청구할 수 있다. [국가 인권 위원회] 단체 등에 의해 부당하게 <span class='blank-slot' id='blank-14' data-answer='차별'></span>당한 사람이 <span class='blank-slot' id='blank-15' data-answer='진정'></span>을 제기하면 이를 조사하여 바로잡아 준다. 잘못된 법 <span class='blank-slot' id='blank-16' data-answer='집행'></span>으로 피해를 본 경우...",
+                    blanks: ['blank-13', 'blank-14', 'blank-15', 'blank-16']
+                },
+                {
+                    text: "[국민 권익 위원회] 잘못된 법 집행으로 피해를 본 국민이 <span class='blank-slot' id='blank-17' data-answer='고충 민원'></span>을 제기하면 구제해 준다. 또한 <span class='blank-slot' id='blank-18' data-answer='행정 기관'></span>의 잘못된 처분에 대해 <span class='blank-slot' id='blank-19' data-answer='행정 심판'></span>을 제기하면 이를 조사하여 잘못된 <span class='blank-slot' id='blank-20' data-answer='처분'></span>을 바로잡아 준다.",
+                    blanks: ['blank-17', 'blank-18', 'blank-19', 'blank-20']
+                }
+            ],
+            userAnswers: {}, // id: word
+            equippedItems: [] // {emoji: '', type: ''}
+        };
+
+        // 모달 제어 함수
+        function showModal(title, message) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        // 화면 전환 함수
+        function showScreen(screenId) {
+            ['screen-intro', 'screen-game', 'screen-reward', 'screen-loading', 'screen-end'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                if(id === 'screen-game' || id === 'screen-intro') {
+                   document.getElementById(id).classList.remove('flex'); 
+                }
+            });
+            const el = document.getElementById(screenId);
+            el.classList.remove('hidden');
+            if(screenId === 'screen-game' || screenId === 'screen-intro') {
+                el.classList.add('flex');
+            }
+        }
+
+        function selectCharacter(char) {
+            state.character = char;
+            document.getElementById('char-boy').classList.remove('border-emerald-500', 'bg-emerald-100');
+            document.getElementById('char-girl').classList.remove('border-emerald-500', 'bg-emerald-100');
+            
+            if(char === '👦') {
+                document.getElementById('char-boy').classList.add('border-emerald-500', 'bg-emerald-100');
+            } else {
+                document.getElementById('char-girl').classList.add('border-emerald-500', 'bg-emerald-100');
+            }
+        }
+
+        function startGame() {
+            const studentId = document.getElementById('input-student-id').value.trim();
+            const name = document.getElementById('input-name').value.trim();
+
+            if (!studentId || !name) {
+                showModal("입력 확인", "학번과 이름을 모두 입력해주세요.");
+                return;
+            }
+            if (!state.character) {
+                showModal("캐릭터 확인", "캐릭터(남자/여자)를 선택해주세요.");
+                return;
+            }
+
+            state.studentId = studentId;
+            state.name = name;
+            
+            // 아바타 설정
+            document.getElementById('avatar-base').innerText = state.character;
+            document.getElementById('player-info').innerText = `${state.studentId} ${state.name}`;
+            
+            // 단어 은행 셔플 및 렌더링
+            state.words.sort(() => Math.random() - 0.5);
+            renderWordBank();
+            
+            // 첫 스테이지 로드
+            loadStage(0);
+            showScreen('screen-game');
+        }
+
+        function renderWordBank() {
+            const bank = document.getElementById('word-bank');
+            bank.innerHTML = '';
+            state.words.forEach(word => {
+                const btn = document.createElement('button');
+                btn.className = 'word-btn bg-white border-2 border-gray-300 text-gray-700 font-bold py-2 px-4 rounded-xl text-lg';
+                btn.innerText = word;
+                btn.onclick = () => selectWordBankItem(btn, word);
+                // 이미 사용된 단어 처리 (재시작 등 대비)
+                if(Object.values(state.userAnswers).includes(word)) {
+                    btn.classList.add('used');
+                }
+                bank.appendChild(btn);
+            });
+        }
+
+        function selectWordBankItem(btn, word) {
+            // 이미 선택된 버튼 스타일 초기화
+            document.querySelectorAll('.word-btn').forEach(b => b.classList.remove('selected'));
+            
+            if (state.selectedWord === word) {
+                // 선택 해제
+                state.selectedWord = null;
+            } else {
+                // 선택
+                state.selectedWord = word;
+                btn.classList.add('selected');
+                
+                // 시각적 피드백: 빈칸들이 깜빡임 (채울 곳을 알려줌)
+                document.querySelectorAll('.blank-slot').forEach(blank => {
+                    if(!blank.classList.contains('filled')) {
+                        blank.classList.add('active');
+                        setTimeout(() => blank.classList.remove('active'), 800);
+                    }
+                });
+            }
+        }
+
+        function handleBlankClick(event) {
+            const blank = event.target;
+            const blankId = blank.id;
+
+            // 이미 채워져 있는 경우 -> 단어 취소 (단어 은행으로 돌려보냄)
+            if (state.userAnswers[blankId]) {
+                const previousWord = state.userAnswers[blankId];
+                delete state.userAnswers[blankId];
+                blank.innerText = "";
+                blank.classList.remove('filled');
+                
+                // 단어 은행에서 해당 단어 복구
+                document.querySelectorAll('.word-btn').forEach(btn => {
+                    if(btn.innerText === previousWord) btn.classList.remove('used');
+                });
+                return;
+            }
+
+            // 단어가 선택되어 있는 경우 -> 빈칸 채우기
+            if (state.selectedWord) {
+                state.userAnswers[blankId] = state.selectedWord;
+                blank.innerText = state.selectedWord;
+                blank.classList.add('filled');
+                
+                // 단어 은행에서 해당 단어 사용됨 처리 및 선택 해제
+                document.querySelectorAll('.word-btn').forEach(btn => {
+                    if(btn.innerText === state.selectedWord) {
+                        btn.classList.remove('selected');
+                        btn.classList.add('used');
+                    }
+                });
+                state.selectedWord = null;
+            } else {
+                showModal("안내", "위의 [단어 보기]에서 단어를 먼저 클릭한 후 빈칸을 클릭하세요.");
+            }
+        }
+
+        function loadStage(index) {
+            state.currentStage = index;
+            document.getElementById('stage-info').innerText = `스테이지 ${index + 1} / 5`;
+            document.getElementById('progress-bar').style.width = `${(index / 5) * 100}%`;
+            
+            const stageData = state.stages[index];
+            const container = document.getElementById('sentence-container');
+            container.innerHTML = stageData.text;
+
+            // 생성된 빈칸에 이벤트 리스너 부착
+            stageData.blanks.forEach(id => {
+                const blank = document.getElementById(id);
+                blank.addEventListener('click', handleBlankClick);
+                
+                // 만약 이전에 채운 기록이 있다면 (보통 뒤로가기 없으므로 불필요하지만 안전장치)
+                if (state.userAnswers[id]) {
+                    blank.innerText = state.userAnswers[id];
+                    blank.classList.add('filled');
+                } else {
+                    blank.innerText = "     "; // 클릭 영역 확보
+                }
+            });
+        }
+
+        function submitStage() {
+            const stageData = state.stages[state.currentStage];
+            let stageCorrect = 0;
+            let unfillCount = 0;
+
+            stageData.blanks.forEach(id => {
+                const blank = document.getElementById(id);
+                const correctAnswer = blank.getAttribute('data-answer');
+                const userAnswer = state.userAnswers[id];
+
+                if (!userAnswer) {
+                    unfillCount++;
+                } else if (userAnswer === correctAnswer) {
+                    stageCorrect++;
+                    blank.style.backgroundColor = '#dcfce7'; // 정답 초록색
+                    blank.style.color = '#15803d';
+                    blank.style.borderBottomColor = '#22c55e';
+                } else {
+                    blank.style.backgroundColor = '#fee2e2'; // 오답 빨간색
+                    blank.style.color = '#b91c1c';
+                    blank.style.borderBottomColor = '#ef4444';
+                }
+            });
+
+            if (unfillCount > 0) {
+                showModal("알림", "아직 채우지 않은 빈칸이 있습니다!");
+                return;
+            }
+
+            state.totalScore += stageCorrect;
+            document.getElementById('score-info').innerText = `현재 점수: ${state.totalScore}점`;
+
+            // 정답 확인 피드백 후 딜레이
+            setTimeout(() => {
+                if (stageCorrect >= 3) {
+                    showScreen('screen-reward');
+                } else {
+                    showModal("결과", `4문제 중 ${stageCorrect}문제를 맞혔습니다.\n아쉽게도 아이템 보상은 3문제 이상 맞혀야 획득할 수 있어요.`);
+                    startNextStage();
+                }
+            }, 1000);
+        }
+
+        function equipItem(emoji, type) {
+            state.equippedItems.push({ emoji, type });
+            updateAvatarDisplay();
+            startNextStage();
+        }
+
+        function updateAvatarDisplay() {
+            const container = document.getElementById('avatar-items');
+            container.innerHTML = '';
+            
+            state.equippedItems.forEach(item => {
+                const itemSpan = document.createElement('span');
+                // 부위별로 클래스를 다르게 주어 위치를 조정
+                if (item.type === 'head') itemSpan.className = 'item-overlay item-head';
+                if (item.type === 'face') itemSpan.className = 'item-overlay item-face';
+                if (item.type === 'body') itemSpan.className = 'item-overlay item-body';
+                itemSpan.innerText = item.emoji;
+                container.appendChild(itemSpan);
+            });
+        }
+
+        function startNextStage() {
+            if (state.currentStage < 4) {
+                loadStage(state.currentStage + 1);
+                showScreen('screen-game');
+            } else {
+                finishGame();
+            }
+        }
+
+        function finishGame() {
+            showScreen('screen-loading');
+            
+            // 웹앱 URL 설정 검증 (선생님이 복사 안 했을 경우)
+            if (APPS_SCRIPT_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbz1Jf6sh4LSh_blsMOQL1D1MzI617gGJk9MQ4HmHxEnH_C0_ymNEIA8PH3ZlYmhjlvn/exec") {
+                showScreen('screen-end');
+                document.getElementById('final-score').innerText = `최종 점수: ${state.totalScore} / 20`;
+                
+                // 아바타 최종 복사
+                document.getElementById('final-avatar-base').innerText = state.character;
+                document.getElementById('final-avatar-items').innerHTML = document.getElementById('avatar-items').innerHTML;
+                
+                setTimeout(() => {
+                    showModal("주의", "구글 Apps Script 웹앱 URL이 설정되지 않아 데이터가 시트에 저장되지 않았습니다.\n(오프라인 모드로 게임은 완료되었습니다)");
+                }, 500);
+                return;
+            }
+
+            const payload = {
+                studentId: state.studentId,
+                name: state.name,
+                score: state.totalScore
+            };
+
+            fetch(APPS_SCRIPT_WEB_APP_URL, {
+                method: 'POST',
+                // Google Apps Script는 text/plain으로 보내고 내부에서 JSON.parse 하는 것이 CORS 회피에 유리할 때가 있습니다.
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === "success") {
+                    console.log("저장 성공");
+                } else {
+                    console.error("저장 중 에러:", data.message);
+                }
+                showFinalResult();
+            })
+            .catch(error => {
+                console.error("네트워크 에러:", error);
+                // 네트워크 에러가 나더라도 사용자는 완료 화면을 볼 수 있게 함
+                showFinalResult();
+            });
+        }
+
+        function showFinalResult() {
+            showScreen('screen-end');
+            document.getElementById('final-score').innerText = `최종 점수: ${state.totalScore} / 20`;
+            
+            document.getElementById('final-avatar-base').innerText = state.character;
+            document.getElementById('final-avatar-items').innerHTML = document.getElementById('avatar-items').innerHTML;
+        }
+
+    </script>
+</body>
+</html>
